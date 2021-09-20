@@ -1,1 +1,257 @@
+The first phase_1 of bomb001 is about giving a string to Dr. Evil. If the user input string store in %eax  matches the string of Dr Evil stored in 0x4023d0 than 
+the phase 1 of the bomb will be diffused, prompting us to next phase, else it will get blow up. As we don’t know the string set by Dr Evil, It is our work to find
+the correct string to diffused the bomb. The string which I got from phase_1 bomb001 is “The moon unit will be divided into two divisions.”
+
+First, open the terminal from bomb001 folder.
+
+//convert the bomb file from machine langauge into assembly langauge in bomb.s file to look more at the assembly code for the next phase
+objdump -d dissamble the code and major function, reads the assembler code and displays information about one or more object files.
+sonam@sonam-Acer-One-14-Z1-4718:~/Desktop/Fifth Semester/CS I/Assignment 1_2/Assignment 1/bomb002$ objdump -d bomb > bomb.s  
+
+//set permission to read, write and execute the bomb file
+sonam@sonam-Acer-One-14-Z1-4718:~/Desktop/Fifth Semester/CS I/Assignment 1_2/Assignment 1/bomb002$ chmod 777 bomb 
+
+sonam@sonam-Acer-One-14-Z1-4718:~/Desktop/Fifth Semester/CS I/Assignment 1_2/Assignment 1/bomb001$ gdb bomb   //debuggging the bomb file
+
+GNU gdb (Ubuntu 9.2-0ubuntu1~20.04) 9.2
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from bomb...
+
+ //set break point in phase_1 in-order to stop at phase_1 for debugging purpose. It will ensure that the bomb doesn’t blow up when we run the program.
+(gdb) break phase_1     
+Breakpoint 1 at 0x400e8d
+
+//set break point in explode_bomb function to pause the execution after entering the phase_1 function
+(gdb) b explode_bomb     
+Breakpoint 2 at 0x40143d
+
+//We can give a test string which can be our choice with any length. This will not blast the bomb since we have already set the break-point. 
+
+(gdb) r
+Starting program: /home/sonam/Desktop/Fifth Semester/CS I/Assignment 1_2/Assignment 1/bomb001/bomb 
+Welcome to my fiendish little bomb. You have 6 phases with
+which to blow yourself up. Have a nice day!
+test string     //testing the user input
+
+Breakpoint 1, 0x0000000000400e8d in phase_1 ()
+
+“disas” command to go inside the assembly code of the phase_1.
+(gdb) disas  // disassemble the phase_1 code  
+Dump of assembler code for function phase_1:
+=> 0x0000000000400e8d <+0>:	sub    $0x8,%rsp
+   0x0000000000400e91 <+4>:	mov    $0x4023d0,%esi
+   0x0000000000400e96 <+9>:	callq  0x40133e <strings_not_equal>
+   0x0000000000400e9b <+14>:	test   %eax,%eax
+   0x0000000000400e9d <+16>:	je     0x400ea4 <phase_1+23>
+   0x0000000000400e9f <+18>:	callq  0x40143d <explode_bomb>
+   0x0000000000400ea4 <+23>:	add    $0x8,%rsp
+   0x0000000000400ea8 <+27>:	retq   
+End of assembler dump.
+
+ //inspect what is being moved from address 0x4023d0. As We know it has to be a string so we use ‘/s’.
+ 
+(gdb) x/s 0x4023d0  
+0x4023d0:	"The moon unit will be divided into two divisions."
+
+(gdb) ni 2   //next instruction to line 2
+0x0000000000400e96 in phase_1 ()
+(gdb) disas
+Dump of assembler code for function phase_1:
+   0x0000000000400e8d <+0>:	sub    $0x8,%rsp
+   0x0000000000400e91 <+4>:	mov    $0x4023d0,%esi
+   
+   //we have a callq function which calls <strings_not_equal> that means we know the input is a string rather than a integer.
+   
+=> 0x0000000000400e96 <+9>:	callq  0x40133e <strings_not_equal> 
+
+
+ //compares user eax value with string input set by Dr.Evil.If equal, it jumps into line<+16> which will further jump to line <phase_1+23>. Else it will jump to callq and the bomb will be exploded.
+  
+   0x0000000000400e9b <+14>:	test   %eax,%eax      
+   0x0000000000400e9d <+16>:	je     0x400ea4 <phase_1+23> 
+   0x0000000000400e9f <+18>:	callq  0x40143d <explode_bomb>
+   0x0000000000400ea4 <+23>:	add    $0x8,%rsp
+   0x0000000000400ea8 <+27>:	retq   
+End of assembler dump.
+
+
+(gdb) si //step into
+0x000000000040133e in strings_not_equal ()
+(gdb) disas
+Dump of assembler code for function strings_not_equal:
+=> 0x000000000040133e <+0>:	push   %r12
+   0x0000000000401340 <+2>:	push   %rbp
+   0x0000000000401341 <+3>:	push   %rbx
+   0x0000000000401342 <+4>:	mov    %rdi,%rbx
+   0x0000000000401345 <+7>:	mov    %rsi,%rbp
+   0x0000000000401348 <+10>:	callq  0x401320 <string_length>
+   0x000000000040134d <+15>:	mov    %eax,%r12d
+   0x0000000000401350 <+18>:	mov    %rbp,%rdi
+   0x0000000000401353 <+21>:	callq  0x401320 <string_length>
+   0x0000000000401358 <+26>:	mov    $0x1,%edx
+   0x000000000040135d <+31>:	cmp    %eax,%r12d
+   0x0000000000401360 <+34>:	jne    0x40139e <strings_not_equal+96>
+   0x0000000000401362 <+36>:	movzbl (%rbx),%eax
+   0x0000000000401365 <+39>:	test   %al,%al
+   0x0000000000401367 <+41>:	je     0x40138b <strings_not_equal+77>
+   0x0000000000401369 <+43>:	cmp    0x0(%rbp),%al
+   0x000000000040136c <+46>:	je     0x401375 <strings_not_equal+55>
+   0x000000000040136e <+48>:	jmp    0x401392 <strings_not_equal+84>
+   0x0000000000401370 <+50>:	cmp    0x0(%rbp),%al
+   0x0000000000401373 <+53>:	jne    0x401399 <strings_not_equal+91>
+   0x0000000000401375 <+55>:	add    $0x1,%rbx
+   0x0000000000401379 <+59>:	add    $0x1,%rbp
+--Type <RET> for more, q to quit, c to continue without paging--c
+   0x000000000040137d <+63>:	movzbl (%rbx),%eax
+   0x0000000000401380 <+66>:	test   %al,%al
+   0x0000000000401382 <+68>:	jne    0x401370 <strings_not_equal+50>
+   0x0000000000401384 <+70>:	mov    $0x0,%edx
+   0x0000000000401389 <+75>:	jmp    0x40139e <strings_not_equal+96>
+   0x000000000040138b <+77>:	mov    $0x0,%edx
+   0x0000000000401390 <+82>:	jmp    0x40139e <strings_not_equal+96>
+   0x0000000000401392 <+84>:	mov    $0x1,%edx
+   0x0000000000401397 <+89>:	jmp    0x40139e <strings_not_equal+96>
+   0x0000000000401399 <+91>:	mov    $0x1,%edx
+   0x000000000040139e <+96>:	mov    %edx,%eax
+   0x00000000004013a0 <+98>:	pop    %rbx
+   0x00000000004013a1 <+99>:	pop    %rbp
+   0x00000000004013a2 <+100>:	pop    %r12
+   0x00000000004013a4 <+102>:	retq   
+End of assembler dump.
+
+
+ //<String_not_equal> does not have a call to bomb, so it is okay to execute. %eax value is = 1. So it will call the bomb. 
+(gdb) r  
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /home/sonam/Desktop/Fifth Semester/CS I/Assignment 1_2/Assignment 1/bomb001/bomb 
+Welcome to my fiendish little bomb. You have 6 phases with
+which to blow yourself up. Have a nice day!
+test
+
+Breakpoint 1, 0x0000000000400e8d in phase_1 ()
+(gdb) i r
+rax            0x6037a0            6305696
+rbx            0x4021f0            4202992
+rcx            0x4                 4
+rdx            0x6037a0            6305696
+rsi            0x0                 0
+rdi            0x6037a0            6305696
+rbp            0x0                 0x0
+rsp            0x7fffffffde08      0x7fffffffde08
+r8             0x6037a0            6305696
+r9             0x7c                124
+r10            0xfffffffffffff6ed  -2323
+r11            0x7ffff7df9400      140737352012800
+r12            0x400c60            4197472
+r13            0x7fffffffdf00      140737488346880
+r14            0x0                 0
+r15            0x0                 0
+rip            0x400e8d            0x400e8d <phase_1>
+eflags         0x202               [ IF ]
+cs             0x33                51
+ss             0x2b                43
+ds             0x0                 0
+es             0x0                 0
+fs             0x0                 0
+--Type <RET> for more, q to quit, c to continue without paging--c
+gs 
+            0x0                 0
+(gdb) r
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /home/sonam/Desktop/Fifth Semester/CS I/Assignment 1_2/Assignment 1/bomb001/bomb 
+Welcome to my fiendish little bomb. You have 6 phases with
+which to blow yourself up. Have a nice day!
+The moon unit will be divided into two divisions.
+
+Breakpoint 1, 0x0000000000400e8d in phase_1 ()
+
+(gdb) disas
+Dump of assembler code for function phase_1:
+=> 0x0000000000400e8d <+0>:	sub    $0x8,%rsp  
+   0x0000000000400e91 <+4>:	mov    $0x4023d0,%esi
+   0x0000000000400e96 <+9>:	callq  0x40133e <strings_not_equal>
+   0x0000000000400e9b <+14>:	test   %eax,%eax
+   0x0000000000400e9d <+16>:	je     0x400ea4 <phase_1+23>
+   0x0000000000400e9f <+18>:	callq  0x40143d <explode_bomb>
+   0x0000000000400ea4 <+23>:	add    $0x8,%rsp
+   0x0000000000400ea8 <+27>:	retq   
+End of assembler dump.
+(gdb) ni 3
+0x0000000000400e9b in phase_1 ()
+(gdb) disas
+Dump of assembler code for function phase_1:
+   0x0000000000400e8d <+0>:	sub    $0x8,%rsp
+   0x0000000000400e91 <+4>:	mov    $0x4023d0,%esi
+   0x0000000000400e96 <+9>:	callq  0x40133e <strings_not_equal>
+=> 0x0000000000400e9b <+14>:	test   %eax,%eax
+   0x0000000000400e9d <+16>:	je     0x400ea4 <phase_1+23>
+   0x0000000000400e9f <+18>:	callq  0x40143d <explode_bomb>
+   0x0000000000400ea4 <+23>:	add    $0x8,%rsp
+   0x0000000000400ea8 <+27>:	retq   
+End of assembler dump.
+(gdb) i r
+rax            0x0                 0           //%rax is equal to 0! which means it will jump pass the explode _bomb
+rbx            0x4021f0            4202992
+rcx            0x31                49
+rdx            0x0                 0
+rsi            0x4023d0            4203472
+rdi            0x402401            4203521
+rbp            0x0                 0x0
+rsp            0x7fffffffde00      0x7fffffffde00
+r8             0x6037a0            6305696
+r9             0x7c                124
+r10            0xfffffffffffff6ed  -2323
+r11            0x7ffff7df9400      140737352012800
+r12            0x400c60            4197472
+r13            0x7fffffffdf00      140737488346880
+r14            0x0                 0
+r15            0x0                 0
+rip            0x400e9b            0x400e9b <phase_1+14>
+eflags         0x246               [ PF ZF IF ]
+cs             0x33                51
+ss             0x2b                43
+ds             0x0                 0
+es             0x0                 0
+fs             0x0                 0
+--Type <RET> for more, q to quit, c to continue without paging--c
+gs             0x0                 0
+
+
+(gdb) info break
+Num     Type           Disp Enb Address            What
+1       breakpoint     keep y   0x0000000000400e8d <phase_1>
+	breakpoint already hit 1 time
+2       breakpoint     keep y   0x000000000040143d <explode_bomb>
+
+
+//Once we get the Dr.Evil string we can remove break point in order to diffused the phase_1 else the break point will prevent the phase from diffusing.
+
+(gdb) delete   
+Delete all breakpoints? (y or n) y
+(gdb) r
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /home/sonam/Desktop/Fifth Semester/CS I/Assignment 1_2/Assignment 1/bomb001/bomb 
+Welcome to my fiendish little bomb. You have 6 phases with
+which to blow yourself up. Have a nice day!
+The moon unit will be divided into two divisions.
+Phase 1 defused. How about the next one?
+
 
