@@ -1,4 +1,6 @@
-The phase_2 of bomb001 is finding the six integer input set by the Dr.Evil. Just like the pahse_1 of bomb001 we have to find the six integer value that matches the Dr. Evil vaues and if our integer matches the values set by the Dr. Evil the bomb will be get diffused else bomb will get blast. So here in phase_2 of bmb001 the answer is six integer input that is the first six fibonacci values. 
+The phase_2 of bomb001 is finding the six integer input set by the Dr.Evil. Just like the pahse_1 of bomb001 we have to find the six integer value that matches
+the Dr. Evil vaues and if our integer matches the values set by the Dr. Evil the bomb will be get diffused else bomb will get blast. So here in phase_2 of bmb001
+the answer is six integer input that is the first six fibonacci values. 
 
 
 //The gdb command to help run a program up to certain point then stop and print out the values of certain variables at that point.
@@ -139,7 +141,7 @@ End of assembler dump.
 
 //check the input format of 0x4025c3 address.
 (gdb) x/s 0x4025c3
-0x4025c3:	"%d %d %d %d %d %d"//input format with six integer
+0x4025c3:	"%d %d %d %d %d %d"     //this will give us hint that we have six input with int datatype
 (gdb) r
 The program being debugged has been started already.
 Start it from the beginning? (y or n) y
@@ -225,7 +227,7 @@ Dump of assembler code for function phase_2:
    0x0000000000400f13 <+106>:	pop    %rbp
    0x0000000000400f14 <+107>:	ret    
 End of assembler dump.
-(gdb) i r
+(gdb) i r     //information register
 rax            0x1                 1  //the third input is 1 because the input store in eax for 32 bits and rax for 64 bits
 rbx            0x7fffffffdde0      140737488346592
 rcx            0x0                 0
